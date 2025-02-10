@@ -1,4 +1,3 @@
-<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
@@ -838,5 +837,3 @@
       window.print();
     }
   </script>
-</body>
-</html>
