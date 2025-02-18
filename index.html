@@ -1,0 +1,1243 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>حاسبة التمويل والجدوى الاقتصادية</title>
+  <!-- Font Awesome وأيقونات -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+  <!-- خط Cairo -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" />
+  <!-- Chart.js للرسم البياني -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- AOS لتأثيرات الحركة -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.css" />
+  <!-- jsPDF لتصدير النتائج إلى PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- SheetJS لتصدير النتائج إلى Excel -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --primary-color: #8B4513;
+      --secondary-color: #1abc9c;
+      --accent-color: #FFD700;
+      --text-color: #333;
+      --bg-gradient: linear-gradient(45deg, #654321, #8B4513, #A0522D);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+    body {
+      font-family: 'Cairo', sans-serif;
+      background: var(--bg-gradient);
+      background-size: 400% 400%;
+      min-height: 100vh;
+      direction: rtl;
+      color: var(--text-color);
+      transition: background 0.5s, color 0.5s;
+    }
+    body.light-mode {
+      --primary-color: #4a4a4a;
+      --secondary-color: #3498db;
+      --accent-color: #e67e22;
+      --text-color: #333;
+      --bg-gradient: linear-gradient(45deg, #f0f0f0, #fff);
+      background: var(--bg-gradient);
+    }
+    @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    .loader {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg-gradient);
+      display: flex; justify-content: center; align-items: center; z-index: 3000;
+    }
+    .loader::after {
+      content: "";
+      width: 50px;
+      height: 50px;
+      border: 5px solid var(--secondary-color);
+      border-top-color: var(--accent-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    
+    /* تنسيق أزرار التنقل العامة */
+    nav a {
+      background-color: rgba(255, 255, 255, 0.2);
+      padding: 8px;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #fff;
+      font-size: 0.9em;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s, transform 0.3s;
+    }
+    nav a i { font-size: 1.2em; margin-bottom: 4px; }
+    nav a:hover { background-color: var(--secondary-color); transform: scale(1.05); }
+    
+    /* تعديل أزرار التبديل لتكون بنفس نمط باقي الأزرار */
+    .toggle-btn {
+      background-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      border: none;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s, transform 0.3s;
+    }
+    .toggle-btn:hover { background-color: var(--secondary-color); transform: scale(1.05); }
+    
+    /* هيدر محسّن مع شعار وقائمة تنقل منظمة */
+    header {
+      background-color: var(--primary-color);
+      color: var(--accent-color);
+      padding: 15px 20px;
+      text-align: center;
+      position: relative;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    }
+    header .logo {
+      font-size: 2.2em;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: var(--accent-color);
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }
+    nav {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+      gap: 8px;
+      margin-top: 10px;
+    }
+    
+    /* الحاوية الرئيسية */
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 30px;
+      background-color: #fff;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      direction: rtl;
+    }
+    h1 { text-align: center; color: var(--primary-color); margin-bottom: 20px; font-size: 2.5em; }
+    h2 { color: var(--primary-color); margin-bottom: 10px; border-bottom: 2px solid var(--primary-color); padding-bottom: 10px; font-size: 1.8em; }
+    h3 { color: var(--secondary-color); margin-bottom: 10px; font-size: 1.6em; }
+    label { display: block; margin-bottom: 8px; font-weight: bold; }
+    input, select, button { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; }
+    button { background-color: var(--primary-color); color: #fff; cursor: pointer; transition: background 0.3s, transform 0.3s; }
+    button:hover { background-color: var(--accent-color); transform: scale(1.02); }
+    .section { margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+    .result { margin-top: 20px; padding: 20px; background-color: #ecf0f1; border-radius: 4px; text-align: center; font-size: 1.2em; }
+    .chart-container { margin-top: 30px; }
+    .export-buttons { margin-top: 20px; text-align: center; }
+    .export-buttons button { margin: 5px; }
+    .reset-button { background-color: #d9534f; margin-bottom: 20px; }
+    .reset-button:hover { background-color: #c9302c; }
+    
+    /* قسم التضخم */
+    .inflation-section { margin-top: 20px; padding: 10px; background-color: #fdfdfd; border: 1px solid #ccc; border-radius: 4px; }
+    .inflation-section label { font-weight: bold; }
+    
+    /* الأقسام التعليمية والتوضيحية */
+    .info-section {
+      margin-top: 40px; padding: 30px;
+      background-color: #f9f9f9; border-radius: 8px; border: 1px solid #ddd;
+      font-size: 1.1em; line-height: 1.8;
+    }
+    .info-section h2 { color: var(--primary-color); margin-bottom: 15px; }
+    .info-section p, .info-section ul { color: #555; }
+    .info-section ul { list-style-type: disc; margin-right: 20px; }
+    .info-section ul li { margin-bottom: 8px; }
+    
+    /* تحسين استجابة جدول مقارنة السيناريوهات */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+    }
+    .table-responsive table {
+      width: 100%;
+      min-width: 600px;
+      border-collapse: collapse;
+    }
+    
+    @media (max-width: 768px) {
+      .container { padding: 20px; margin: 20px auto; }
+      h1 { font-size: 2em; }
+      h2 { font-size: 1.8em; }
+      h3 { font-size: 1.4em; }
+      input, select, button { font-size: 14px; padding: 8px; }
+      .export-buttons button, .final-actions button { font-size: 14px; padding: 8px 12px; }
+      nav { grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); }
+    }
+    @media (max-width: 480px) {
+      .container { width: 95%; padding: 10px; margin: 10px auto; }
+      h1 { font-size: 1.8em; }
+      h2 { font-size: 1.6em; }
+      h3 { font-size: 1.4em; }
+      input, select, button { font-size: 12px; padding: 6px; }
+      nav { grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); }
+    }
+    
+    /* تنسيق Toast للإشعارات */
+    #toast {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: #333;
+      color: #fff;
+      text-align: center;
+      border-radius: 4px;
+      padding: 16px;
+      position: fixed;
+      z-index: 4000;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      font-size: 17px;
+    }
+    #toast.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 2.5s;
+    }
+    @keyframes fadein { from { bottom: 0; opacity: 0; } to { bottom: 30px; opacity: 1; } }
+    @keyframes fadeout { from { bottom: 30px; opacity: 1; } to { bottom: 0; opacity: 0; } }
+    
+    /* تنسيق النافذة المنبثقة (المودال) لسجل العمليات */
+    #historyModal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      z-index: 5000;
+      justify-content: center;
+      align-items: center;
+    }
+    #historyModalContent {
+      background-color: #fff;
+      width: 90%;
+      max-width: 600px;
+      padding: 20px;
+      border-radius: 8px;
+      max-height: 80vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    #historyModalContent h2 {
+      margin-bottom: 15px;
+    }
+    #historyModalContent table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #historyModalContent table, #historyModalContent th, #historyModalContent td {
+      border: 1px solid #ccc;
+    }
+    #historyModalContent th, #historyModalContent td {
+      padding: 8px;
+      text-align: center;
+    }
+    /* زر إغلاق السجل */
+    #closeHistory {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background-color: #c9302c;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      font-size: 1.2em;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.3s;
+    }
+    #closeHistory:hover {
+      background-color: #a5281b;
+    }
+  </style>
+</head>
+<body>
+  <!-- شاشة التحميل -->
+  <div id="loader" class="loader"></div>
+  
+  <!-- هيدر محسّن مع شعار وقائمة تنقل منظمة -->
+  <header>
+    <div class="logo">حاسبة التمويل والجدوى الاقتصادية</div>
+    <nav>
+      <!-- زر المقدمة كأول زر -->
+      <a href="#introduction" class="nav-item" data-key="introduction" data-icon="fas fa-home"></a>
+      <a href="#dataSection" class="nav-item" data-key="dataSection" data-icon="fas fa-info-circle"></a>
+      <a href="#resultSection" class="nav-item" data-key="resultSection" data-icon="fas fa-calculator"></a>
+      <a href="#cashFlowChart" class="nav-item" data-key="chartSection" data-icon="fas fa-chart-line"></a>
+      <a href="#sensitivityTable" class="nav-item" data-key="sensitivitySection" data-icon="fas fa-sliders-h"></a>
+      <a href="#scenarioResults" class="nav-item" data-key="scenarioSection" data-icon="fas fa-tasks"></a>
+      <!-- قسم التقارير المتقدمة -->
+      <a href="#advancedReport" class="nav-item" data-key="advancedReport" data-icon="fas fa-file-alt"></a>
+      <!-- قسم الإحصائيات المالية -->
+      <a href="#financialStats" class="nav-item" data-key="financialStats" data-icon="fas fa-chart-bar"></a>
+      <!-- قسم التوصيات -->
+      <a href="#recommendations" class="nav-item" data-key="recommendations" data-icon="fas fa-lightbulb"></a>
+      <a href="#financialInsights" class="nav-item" data-key="financialInsights" data-icon="fas fa-university"></a>
+      <a href="#userGuide" class="nav-item" data-key="userGuide" data-icon="fas fa-book"></a>
+      <a href="#internationalStandards" class="nav-item" data-key="internationalStandards" data-icon="fas fa-globe"></a>
+      <a href="#importantNotes" class="nav-item" data-key="importantNotes" data-icon="fas fa-exclamation-triangle"></a>
+      <!-- زر السجل -->
+      <a href="javascript:void(0)" id="historyToggle" class="nav-item toggle-btn" data-icon="fas fa-history"></a>
+      <!-- أزرار تبديل اللغة والوضع -->
+      <a href="javascript:void(0)" id="langToggle" class="nav-item toggle-btn" data-icon="fas fa-language"></a>
+      <a href="javascript:void(0)" id="modeToggle" class="nav-item toggle-btn" data-icon="fas fa-moon"></a>
+    </nav>
+  </header>
+  
+  <!-- المحتوى الرئيسي -->
+  <main>
+    <div class="container">
+      <h1>حاسبة التمويل والجدوى الاقتصادية</h1>
+      <p style="text-align: center; color: #555;">نظام متكامل لتحليل الجدوى الاقتصادية وتقدير التمويل اللازم للمشاريع الإنشائية وفق المعايير الدولية. يقدم النظام تحليلاً دقيقاً وشاملاً مع رسوم بيانية وتفاصيل مفصلة حول التدفقات النقدية، الحساسية، والسيناريوهات المختلفة.</p>
+      
+      <!-- قسم المقدمة -->
+      <div class="info-section" data-aos="fade-up" id="introduction">
+        <h2>المقدمة</h2>
+        <p>مرحباً بكم في نظام حاسبة التمويل والجدوى الاقتصادية. يقدم هذا النظام تحليلاً مالياً شاملاً للمشاريع الإنشائية مع إمكانية مقارنة السيناريوهات المختلفة، تحليل الحساسية، وتوليد تقارير متقدمة وإحصائيات مالية تساعدكم في اتخاذ قرارات استثمارية سليمة.</p>
+      </div>
+      
+      <!-- نموذج إدخال البيانات -->
+      <div class="section" id="dataSection" data-aos="fade-up">
+        <h2>البيانات الأساسية</h2>
+        <p style="color: #555; font-size: 1.1em;">يرجى إدخال كافة البيانات المطلوبة بدقة للحصول على تحليل مالي مفصل ودقيق للمشروع.</p>
+        
+        <label for="projectName" title="مثال: مشروع إنشاء مبنى سكني">اسم المشروع (اختياري):</label>
+        <input type="text" id="projectName" placeholder="أدخل اسم المشروع">
+        
+        <label for="totalCost" title="أدخل التكلفة الإجمالية للمشروع بالعملة المختارة">التكلفة الإجمالية للمشروع:</label>
+        <input type="number" id="totalCost" placeholder="أدخل التكلفة الإجمالية">
+        
+        <label for="currency" title="اختر العملة المستخدمة في الحساب">اختر العملة:</label>
+        <select id="currency">
+          <option value="YER" selected>الريال اليمني (YER)</option>
+          <option value="USD">الدولار الأمريكي (USD)</option>
+        </select>
+        
+        <label for="exchangeRate" title="أدخل سعر الصرف الحالي بين الريال والدولار">سعر الصرف (ريال/دولار):</label>
+        <input type="number" id="exchangeRate" placeholder="أدخل سعر الصرف" value="250">
+        <button onclick="updateExchangeRate()" class="btn-animate" style="margin-bottom:15px;">
+          <i class="fas fa-sync-alt"></i> تحديث سعر الصرف
+        </button>
+        
+        <label for="buildingType" title="اختر نوع المبنى">نوع المبنى:</label>
+        <select id="buildingType">
+          <option value="residential">سكني</option>
+          <option value="commercial">تجاري</option>
+          <option value="service">خدمي</option>
+          <option value="industrial">صناعي</option>
+        </select>
+        
+        <label for="buildingUsage" title="حدد الاستخدام الرئيسي للمبنى">استخدام المبنى:</label>
+        <select id="buildingUsage">
+          <option value="residential">سكني</option>
+          <option value="office">مكتبي</option>
+          <option value="retail">تجاري</option>
+          <option value="mixed">مختلط</option>
+        </select>
+        
+        <label for="financingType" title="اختر نوع التمويل الذي يناسب المشروع">نوع التمويل:</label>
+        <select id="financingType">
+          <option value="bankLoan">قرض بنكي</option>
+          <option value="private">تمويل خاص</option>
+          <option value="governmentGrant">منحة حكومية</option>
+          <option value="hybrid">مختلط</option>
+        </select>
+        
+        <label for="financingPercent" title="مثال: إذا كنت ترغب في تمويل 30% من المشروع، أدخل 30">نسبة التمويل المطلوبة (%):</label>
+        <input type="number" id="financingPercent" placeholder="مثال: 30" value="30">
+        
+        <label for="annualRevenue" title="أدخل الإيرادات السنوية المتوقعة للمشروع">الإيرادات السنوية المتوقعة:</label>
+        <input type="number" id="annualRevenue" placeholder="أدخل الإيرادات السنوية">
+        
+        <label for="annualExpenses" title="أدخل المصاريف التشغيلية السنوية للمشروع">المصاريف التشغيلية السنوية:</label>
+        <input type="number" id="annualExpenses" placeholder="أدخل المصاريف التشغيلية">
+        
+        <label for="interestRate" title="مثال: 8 يعني 8%">معدل الفائدة السنوي (%):</label>
+        <input type="number" id="interestRate" placeholder="مثال: 8" value="8">
+        
+        <label for="projectDuration" title="أدخل مدة المشروع بالسنوات">مدة المشروع (بالسنوات):</label>
+        <input type="number" id="projectDuration" placeholder="أدخل المدة الزمنية" value="10">
+        
+        <!-- قسم التضخم -->
+        <div class="inflation-section" data-aos="fade-up">
+          <label for="useInflation" title="حدد إذا كنت تريد احتساب التضخم السنوي">احتساب التضخم السنوي:</label>
+          <input type="checkbox" id="useInflation">
+          <label for="inflationRate" title="أدخل معدل التضخم السنوي (%)">معدل التضخم السنوي (%):</label>
+          <input type="number" id="inflationRate" placeholder="مثال: 3" value="3">
+        </div>
+        
+        <button onclick="calculateFeasibility()" class="btn-animate">
+          <i class="fas fa-calculator"></i> احسب الجدوى
+        </button>
+        <button class="reset-button btn-animate" onclick="resetCalculator()">
+          <i class="fas fa-undo"></i> إعادة تعيين
+        </button>
+      </div>
+      
+      <!-- عرض النتائج -->
+      <div class="result" id="resultSection" data-aos="fade-up">
+        <h2>النتائج</h2>
+        <p id="financingNeeded"></p>
+        <p id="npvResult"></p>
+        <p id="paybackPeriod"></p>
+        <p id="irrResult"></p>
+      </div>
+      
+      <!-- رسم بياني للتدفق النقدي السنوي -->
+      <div class="chart-container" data-aos="fade-up">
+        <canvas id="cashFlowChart"></canvas>
+      </div>
+      
+      <!-- قسم تحليل الحساسية لمعدل الفائدة -->
+      <div class="section sensitivity-section" data-aos="fade-up">
+        <h2>تحليل الحساسية لمعدل الفائدة</h2>
+        <label for="sensitivityDelta" title="يمكنك تحديد مقدار التغير الذي تريد اختباره (مثال: 2 يعني ±2%)">
+          تغير معدل الفائدة (نسبة مئوية):
+        </label>
+        <input type="range" id="sensitivityDelta" min="0.5" max="5" step="0.1" value="2"
+          oninput="document.getElementById('deltaValue').innerText = this.value">
+        <span id="deltaValue">2</span>%
+        <button onclick="calculateSensitivity()" class="btn-animate">
+          <i class="fas fa-chart-line"></i> احسب تحليل الحساسية
+        </button>
+        <table class="sensitivity-table" id="sensitivityTable">
+          <thead>
+            <tr>
+              <th>معدل الفائدة (%)</th>
+              <th>صافي القيمة الحالية (ريال)</th>
+            </tr>
+          </thead>
+          <tbody><!-- ستظهر البيانات هنا --></tbody>
+        </table>
+      </div>
+      
+      <!-- قسم تحليل السيناريوهات التمويلية -->
+      <div class="section" data-aos="fade-up">
+        <h2>تحليل السيناريوهات التمويلية</h2>
+        <p style="color: #555;">يمكنك مقارنة نتائج المشروع لسيناريوهات تمويلية مختلفة عبر تغيير نسبة التمويل:</p>
+        <div style="display:flex; gap:10px; margin-bottom:20px;">
+          <button onclick="calculateScenario(0.2)" class="btn-animate"><i class="fas fa-percentage"></i> 20%</button>
+          <button onclick="calculateScenario(0.3)" class="btn-animate"><i class="fas fa-percentage"></i> 30%</button>
+          <button onclick="calculateScenario(0.4)" class="btn-animate"><i class="fas fa-percentage"></i> 40%</button>
+          <button onclick="calculateScenario(0.5)" class="btn-animate"><i class="fas fa-percentage"></i> 50%</button>
+        </div>
+        <div id="scenarioResults"></div>
+        <button onclick="saveScenario()" class="btn-animate" style="margin-top:10px;">
+          <i class="fas fa-save"></i> حفظ السيناريو الحالي
+        </button>
+        <button onclick="clearScenarios()" class="btn-animate" style="margin-top:10px; background-color: #c9302c;">
+          <i class="fas fa-trash"></i> مسح السيناريوهات
+        </button>
+        <div class="table-responsive" id="scenarioComparison"></div>
+      </div>
+      
+      <!-- قسم التقارير المتقدمة -->
+      <div class="info-section" data-aos="fade-up" id="advancedReport">
+        <h2>تقارير متقدمة</h2>
+        <div id="advancedReportContent">
+          <!-- سيتم عرض جدول التدفقات النقدية السنوية هنا -->
+        </div>
+      </div>
+      
+      <!-- قسم الإحصائيات المالية -->
+      <div class="info-section" data-aos="fade-up" id="financialStats">
+        <!-- سيتم عرض الإحصائيات المالية هنا -->
+      </div>
+      
+      <!-- قسم التوصيات -->
+      <div class="info-section" data-aos="fade-up" id="recommendations">
+        <h2>التوصيات</h2>
+        <ul>
+          <li>تأكد من صحة البيانات المدخلة للحصول على نتائج دقيقة.</li>
+          <li>قم بتحديث سعر الصرف بانتظام إذا كان المشروع يعتمد على عملات أجنبية.</li>
+          <li>يُنصح بالتعاون مع مختصين ماليين لتقييم الجدوى بشكل أكثر تفصيلاً.</li>
+          <li>يمكن استخدام التقارير المتقدمة والإحصائيات المالية لتحليل التدفقات والنسب بشكل أعمق.</li>
+        </ul>
+      </div>
+      
+      <!-- قسم رؤى مالية -->
+      <div class="info-section" data-aos="fade-up" id="financialInsights">
+        <h2>رؤى مالية</h2>
+        <p>يقدم هذا القسم تحليلاً متعمقًا لبعض المؤشرات المالية الهامة، مثل معدلات النمو المتوقع والتأثيرات المحتملة للتغيرات الاقتصادية. تساعد هذه الرؤى في فهم الصورة المالية الشاملة للمشروع واتخاذ قرارات استراتيجية دقيقة.</p>
+      </div>
+      
+      <!-- قسم دليل المستخدم والمعايير والملاحظات -->
+      <div class="info-section" data-aos="fade-up" id="userGuide">
+        <h2>دليل المستخدم</h2>
+        <p>يوفر هذا الدليل شرحًا مفصلًا لكيفية استخدام الحاسبة من البداية وحتى الحصول على التحليل المالي الكامل، مع أمثلة واقعية ونصائح لتحسين الدراسة.</p>
+        <ul>
+          <li>قم بإدخال البيانات الأساسية بدقة، مثل التكلفة الإجمالية للمشروع وسعر الصرف.</li>
+          <li>حدد نوع المبنى واستخدامه ونوع التمويل المناسب، حيث يختلف التحليل المالي تبعًا لنوع المشروع.</li>
+          <li>أدخل الإيرادات السنوية المتوقعة والمصاريف التشغيلية للمشروع لضمان حساب تدفق نقدي دقيق.</li>
+          <li>يمكنك تحديد احتساب التضخم السنوي لزيادة دقة التحليل مع مرور الزمن.</li>
+          <li>اضغط على زر "احسب الجدوى" لاستعراض النتائج التفصيلية، بما في ذلك التمويل المطلوب، صافي القيمة الحالية، فترة الاسترداد، ومعدل العائد الداخلي.</li>
+          <li>استخدم أقسام تحليل الحساسية والسيناريوهات لمراقبة تأثير التغيرات في معدل الفائدة ونسبة التمويل.</li>
+          <li>يمكنك تصدير النتائج بتنسيقات PDF وExcel وCSV لمشاركتها مع فريق العمل أو المستثمرين.</li>
+        </ul>
+      </div>
+      
+      <div class="info-section" data-aos="fade-up" id="internationalStandards">
+        <h2>المعايير الدولية وأهمية دراسة الجدوى</h2>
+        <p>تعتمد دراسات الجدوى على معايير دولية لتحليل التدفقات النقدية وتقييم جدوى المشروع المالي، مما يساعد في اتخاذ قرارات استثمارية سليمة. يتم استخدام نماذج حسابية دقيقة وأطر عمل عالمية لضمان شمولية الدراسة.</p>
+      </div>
+      
+      <div class="info-section" data-aos="fade-up" id="importantNotes">
+        <h2>ملاحظات هامة</h2>
+        <ul>
+          <li>تعتمد النتائج على البيانات المدخلة؛ يرجى التأكد من صحتها لضمان دقة التحليل المالي.</li>
+          <li>تحديث سعر الصرف بانتظام ضروري إذا كان المشروع يعتمد على عملات أجنبية.</li>
+          <li>يوصى بالتعاون مع مختصين ماليين لتحليل الجدوى بشكل مفصل قبل اتخاذ قرارات استثمارية.</li>
+          <li>يمكن استخدام النتائج كنقطة انطلاق لتطوير دراسات جدوى أعمق مع تضمين عوامل السوق والتنافس.</li>
+        </ul>
+      </div>
+      
+    </div>
+  </main>
+  
+  <!-- نافذة سجل العمليات (History Modal) -->
+  <div id="historyModal">
+    <div id="historyModalContent">
+      <button id="closeHistory">&times;</button>
+      <h2>سجل العمليات</h2>
+      <div id="historyList">
+        <!-- سيتم عرض آخر 10 سجل تلقائي هنا -->
+      </div>
+      <button onclick="clearHistory()" class="btn-animate" style="background-color:#c9302c; margin-top:10px;">
+        <i class="fas fa-trash"></i> مسح السجل
+      </button>
+    </div>
+  </div>
+  
+  <!-- الفوتر -->
+  <footer style="background: #333; color: #ccc; padding: 20px; text-align: center; direction: rtl; margin-top: 40px;">
+    <p style="margin-bottom: 10px;">© 2024 حاسبة التمويل والجدوى الاقتصادية - جميع الحقوق محفوظة</p>
+    <p>
+      <a href="https://guyc-yemen.com/" style="color: var(--accent-color); text-decoration: none;">الموقع الرسمي</a> |
+      <a href="mailto:info@guyc-ye.com" style="color: var(--accent-color); text-decoration: none;">البريد الإلكتروني</a> |
+      <a href="tel:01450553" style="color: var(--accent-color); text-decoration: none;">01-450553</a>
+    </p>
+    <p style="margin-top: 10px;">
+      <a href="#" style="color: var(--accent-color); margin: 0 5px; text-decoration: none;"><i class="fab fa-facebook"></i></a>
+      <a href="#" style="color: var(--accent-color); margin: 0 5px; text-decoration: none;"><i class="fab fa-twitter"></i></a>
+      <a href="#" style="color: var(--accent-color); margin: 0 5px; text-decoration: none;"><i class="fab fa-youtube"></i></a>
+      <a href="#" style="color: var(--accent-color); margin: 0 5px; text-decoration: none;"><i class="fab fa-whatsapp"></i></a>
+    </p>
+  </footer>
+  
+  <!-- استدعاء مكتبة AOS -->
+  <script src="https://cdn.jsdelivr.net/npm/aos@2.3.4/dist/aos.js"></script>
+  <script>
+    window.addEventListener('load', () => {
+      AOS.init();
+      document.getElementById('loader').style.display = 'none';
+      loadInputs();
+      updateLanguage();
+      // استعادة تفضيل الوضع الليلي
+      const mode = localStorage.getItem('mode');
+      if(mode === 'light') {
+        document.body.classList.add("light-mode");
+      }
+      // تسجيل دخول المستخدم مرة واحدة لكل جلسة
+      if (!sessionStorage.getItem('hasLogged')) {
+        saveLoginRecord();
+        sessionStorage.setItem('hasLogged', 'true');
+      }
+      // تحميل سجل العمليات إن وجد
+      loadHistory();
+    });
+  </script>
+  
+  <!-- دوال النظام والتبديل والميزات الجديدة -->
+  <script>
+    // تأكيد تحميل عناصر الصفحة قبل إضافة مستمعي الأحداث لزر السجل والإغلاق
+    window.addEventListener('DOMContentLoaded', function() {
+      document.getElementById("historyToggle").addEventListener("click", showHistoryModal);
+      document.getElementById("closeHistory").addEventListener("click", closeHistoryModal);
+    });
+    
+    // وظائف حفظ واستعادة المدخلات
+    function saveInputs() {
+      const inputs = {
+        projectName: document.getElementById('projectName').value,
+        totalCost: document.getElementById('totalCost').value,
+        exchangeRate: document.getElementById('exchangeRate').value,
+        buildingType: document.getElementById('buildingType').value,
+        buildingUsage: document.getElementById('buildingUsage').value,
+        financingType: document.getElementById('financingType').value,
+        financingPercent: document.getElementById('financingPercent').value,
+        annualRevenue: document.getElementById('annualRevenue').value,
+        annualExpenses: document.getElementById('annualExpenses').value,
+        interestRate: document.getElementById('interestRate').value,
+        projectDuration: document.getElementById('projectDuration').value,
+        useInflation: document.getElementById('useInflation') ? document.getElementById('useInflation').checked : false,
+        inflationRate: document.getElementById('inflationRate') ? document.getElementById('inflationRate').value : ""
+      };
+      localStorage.setItem('feasibilityInputs', JSON.stringify(inputs));
+    }
+    function loadInputs() {
+      const saved = localStorage.getItem('feasibilityInputs');
+      if (saved) {
+        const inputs = JSON.parse(saved);
+        document.getElementById('projectName').value = inputs.projectName || "";
+        document.getElementById('totalCost').value = inputs.totalCost || "";
+        document.getElementById('exchangeRate').value = inputs.exchangeRate || "250";
+        document.getElementById('buildingType').value = inputs.buildingType || "residential";
+        document.getElementById('buildingUsage').value = inputs.buildingUsage || "residential";
+        document.getElementById('financingType').value = inputs.financingType || "bankLoan";
+        document.getElementById('financingPercent').value = inputs.financingPercent || "30";
+        document.getElementById('annualRevenue').value = inputs.annualRevenue || "";
+        document.getElementById('annualExpenses').value = inputs.annualExpenses || "";
+        document.getElementById('interestRate').value = inputs.interestRate || "8";
+        document.getElementById('projectDuration').value = inputs.projectDuration || "10";
+        if(document.getElementById('useInflation')) {
+          document.getElementById('useInflation').checked = inputs.useInflation || false;
+          document.getElementById('inflationRate').value = inputs.inflationRate || "3";
+        }
+      }
+    }
+    function updateExchangeRate() {
+      fetch("https://api.exchangerate-api.com/v4/latest/USD")
+        .then(response => response.json())
+        .then(data => {
+          if(data && data.rates && data.rates["YER"]) {
+            const rate = data.rates["YER"];
+            document.getElementById("exchangeRate").value = rate;
+            showToast("تم تحديث سعر الصرف: " + rate);
+            saveInputs();
+          } else {
+            showToast("تعذر الحصول على سعر الصرف.");
+          }
+        })
+        .catch(err => showToast("فشل تحديث سعر الصرف: " + err));
+    }
+    const inputFields = document.querySelectorAll('#dataSection input, #dataSection select');
+    let debounceTimer;
+    inputFields.forEach(field => {
+      field.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => { calculateFeasibility(); saveInputs(); }, 500);
+      });
+    });
+    function calculateFeasibility() {
+      const projectName = document.getElementById('projectName').value || "المشروع غير محدد";
+      const totalCost = parseFloat(document.getElementById('totalCost').value);
+      const exchangeRate = parseFloat(document.getElementById('exchangeRate').value) || 1;
+      const currency = document.getElementById('currency').value;
+      const buildingType = document.getElementById('buildingType').value;
+      const buildingUsage = document.getElementById('buildingUsage').value;
+      const financingType = document.getElementById('financingType').value;
+      const financingPercent = parseFloat(document.getElementById('financingPercent').value) / 100;
+      const annualRevenue = parseFloat(document.getElementById('annualRevenue').value);
+      const annualExpenses = parseFloat(document.getElementById('annualExpenses').value);
+      const interestRate = parseFloat(document.getElementById('interestRate').value) / 100;
+      const duration = parseFloat(document.getElementById('projectDuration').value);
+      
+      if (!totalCost || totalCost <= 0 || !annualRevenue || annualRevenue <= 0) {
+        showToast("يرجى إدخال البيانات اللازمة بشكل صحيح.");
+        return;
+      }
+      
+      const totalCostConverted = (currency === "USD") ? totalCost / exchangeRate : totalCost;
+      const financingNeeded = totalCostConverted * financingPercent;
+      const equity = totalCostConverted - financingNeeded;
+      const r = interestRate;
+      const n = duration;
+      const annualDebtService = financingNeeded * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+      let cashFlows = [];
+      let useInflation = document.getElementById('useInflation') ? document.getElementById('useInflation').checked : false;
+      let inflationRate = useInflation ? parseFloat(document.getElementById('inflationRate').value) / 100 : 0;
+      for (let t = 1; t <= n; t++) {
+        let currentRevenue = annualRevenue;
+        let currentExpenses = annualExpenses;
+        if(useInflation) {
+          currentRevenue = annualRevenue * Math.pow(1 + inflationRate, t - 1);
+          currentExpenses = annualExpenses * Math.pow(1 + inflationRate, t - 1);
+        }
+        cashFlows.push(currentRevenue - currentExpenses - annualDebtService);
+      }
+      let npv = -equity;
+      for (let t = 1; t <= n; t++) {
+        npv += cashFlows[t - 1] / Math.pow(1 + r, t);
+      }
+      let cumulativeCash = 0, payback = 0;
+      for (let t = 1; t <= n; t++) {
+        cumulativeCash += cashFlows[t - 1];
+        if (cumulativeCash >= equity) {
+          const prevCumulative = cumulativeCash - cashFlows[t - 1];
+          const fraction = (equity - prevCumulative) / cashFlows[t - 1];
+          payback = t - 1 + fraction;
+          break;
+        }
+      }
+      if (cumulativeCash < equity) payback = "لم يتحقق الاسترداد خلال مدة المشروع";
+      let irr = 0, npvGuess = 0, iteration = 0;
+      while (iteration < 1000) {
+        npvGuess = -equity;
+        for (let t = 1; t <= n; t++) {
+          npvGuess += cashFlows[t - 1] / Math.pow(1 + irr, t);
+        }
+        if (Math.abs(npvGuess) < 0.01) break;
+        irr = npvGuess > 0 ? irr + 0.001 : irr - 0.001;
+        iteration++;
+      }
+      irr = (irr * 100).toFixed(2);
+      
+      // حساب إجمالي التدفقات والعائد على الاستثمار (ROI)
+      const totalCashFlow = cashFlows.reduce((sum, cf) => sum + cf, 0);
+      const roi = (equity !== 0) ? (totalCashFlow / equity * 100).toFixed(2) : "N/A";
+      
+      document.getElementById('resultSection').innerHTML = `
+        <h2>النتائج</h2>
+        <p id="financingNeeded"><strong>التمويل المطلوب (القرض):</strong> ${financingNeeded.toLocaleString()} ${currency}</p>
+        <p id="npvResult"><strong>صافي القيمة الحالية (NPV):</strong> ${npv.toLocaleString()} ${currency}</p>
+        <p id="paybackPeriod"><strong>فترة الاسترداد:</strong> ${typeof payback === 'string' ? payback : payback.toFixed(2) + " سنة"}</p>
+        <p id="irrResult"><strong>معدل العائد الداخلي (IRR):</strong> ${irr}%</p>
+      `;
+      updateCashFlowChart(cashFlows);
+      calculateSensitivity();
+      updateScenarioResult(
+        `التمويل المطلوب: ${financingNeeded.toLocaleString()} ${currency}`,
+        `NPV: ${npv.toLocaleString()} ${currency}`,
+        `فترة الاسترداد: ${typeof payback === 'string' ? payback : payback.toFixed(2) + " سنة"}`,
+        `IRR: ${irr}%`,
+        "السيناريو الأساسي"
+      );
+      generateAdvancedReport(cashFlows);
+      generateFinancialStats(cashFlows, equity);
+      // حفظ العملية الحالية في سجل الحسابات (من نوع "calculation")
+      saveRecordToHistory({
+        type: "calculation",
+        projectName: document.getElementById('projectName').value,
+        inputs: {
+          projectName: document.getElementById('projectName').value,
+          totalCost: document.getElementById('totalCost').value,
+          exchangeRate: document.getElementById('exchangeRate').value,
+          buildingType: document.getElementById('buildingType').value,
+          buildingUsage: document.getElementById('buildingUsage').value,
+          financingType: document.getElementById('financingType').value,
+          financingPercent: document.getElementById('financingPercent').value,
+          annualRevenue: document.getElementById('annualRevenue').value,
+          annualExpenses: document.getElementById('annualExpenses').value,
+          interestRate: document.getElementById('interestRate').value,
+          projectDuration: document.getElementById('projectDuration').value,
+          useInflation: document.getElementById('useInflation').checked,
+          inflationRate: document.getElementById('inflationRate').value
+        },
+        results: {
+          financingNeeded: financingNeeded.toLocaleString() + " " + currency,
+          npv: npv.toLocaleString() + " " + currency,
+          payback: (typeof payback === 'string') ? payback : payback.toFixed(2) + " سنة",
+          irr: irr + "%"
+        },
+        timestamp: new Date().toLocaleString()
+      });
+    }
+    let cashFlowChart;
+    function updateCashFlowChart(cashFlows) {
+      const ctx = document.getElementById('cashFlowChart').getContext('2d');
+      const labels = cashFlows.map((_, index) => "السنة " + (index + 1));
+      if (cashFlowChart) {
+        cashFlowChart.data.labels = labels;
+        cashFlowChart.data.datasets[0].data = cashFlows;
+        cashFlowChart.update();
+      } else {
+        cashFlowChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'التدفق النقدي السنوي',
+              data: cashFlows,
+              backgroundColor: 'rgba(26,188,156,0.3)',
+              borderColor: 'rgba(26,188,156,1)',
+              borderWidth: 2,
+              fill: true,
+              tension: 0.3
+            }]
+          },
+          options: { responsive: true, animation: { duration: 1500, easing: 'easeOutQuart' }, scales: { y: { beginAtZero: true } } }
+        });
+      }
+    }
+    function calculateSensitivity() {
+      const baseRate = parseFloat(document.getElementById('interestRate').value) / 100;
+      const delta = parseFloat(document.getElementById('sensitivityDelta').value) / 100;
+      const duration = parseFloat(document.getElementById('projectDuration').value);
+      const totalCost = parseFloat(document.getElementById('totalCost').value);
+      const financingPercent = parseFloat(document.getElementById('financingPercent').value) / 100;
+      const annualRevenue = parseFloat(document.getElementById('annualRevenue').value);
+      const annualExpenses = parseFloat(document.getElementById('annualExpenses').value);
+      const financingNeeded = totalCost * financingPercent;
+      const equity = totalCost - financingNeeded;
+      let sensitivityData = [];
+      for (let rate = baseRate - delta; rate <= baseRate + delta; rate += 0.005) {
+        let npv = -equity;
+        const debtService = financingNeeded * (rate * Math.pow(1 + rate, duration)) / (Math.pow(1 + rate, duration) - 1);
+        let cashFlows = [];
+        for (let t = 1; t <= duration; t++) {
+          cashFlows.push(annualRevenue - annualExpenses - debtService);
+          npv += cashFlows[t - 1] / Math.pow(1 + rate, t);
+        }
+        sensitivityData.push({ rate: (rate * 100).toFixed(2), npv: npv.toFixed(2) });
+      }
+      const tbody = document.getElementById('sensitivityTable').querySelector("tbody");
+      tbody.innerHTML = sensitivityData.map(item => `<tr><td>${item.rate}</td><td>${item.npv}</td></tr>`).join("");
+    }
+    function calculateScenario(newFinancingPercent) {
+      document.getElementById('financingPercent').value = newFinancingPercent * 100;
+      calculateFeasibility();
+      const financingText = document.getElementById('financingNeeded').innerText;
+      const npvText = document.getElementById('npvResult').innerText;
+      const paybackText = document.getElementById('paybackPeriod').innerText;
+      const irrText = document.getElementById('irrResult').innerText;
+      updateScenarioResult(financingText, npvText, paybackText, irrText, `سيناريو تمويلي بنسبة ${newFinancingPercent * 100}%`);
+    }
+    function updateScenarioResult(financing, npv, payback, irr, scenarioName) {
+      const scenarioDiv = document.getElementById('scenarioResults');
+      scenarioDiv.innerHTML = `
+        <h3>${scenarioName}</h3>
+        <p><strong>${financing}</strong></p>
+        <p><strong>${npv}</strong></p>
+        <p><strong>${payback}</strong></p>
+        <p><strong>${irr}</strong></p>
+      `;
+    }
+    let savedScenarios = [];
+    function saveScenario() {
+      const scenario = {
+        type: "calculation",
+        projectName: document.getElementById('projectName').value || "المشروع غير محدد",
+        financing: document.getElementById('financingNeeded').innerText,
+        npv: document.getElementById('npvResult').innerText,
+        payback: document.getElementById('paybackPeriod').innerText,
+        irr: document.getElementById('irrResult').innerText,
+        timestamp: new Date().toLocaleString()
+      };
+      savedScenarios.push(scenario);
+      updateScenarioComparison();
+    }
+    function updateScenarioComparison() {
+      const compDiv = document.getElementById('scenarioComparison');
+      if (savedScenarios.length === 0) {
+        compDiv.innerHTML = "<p>لا توجد سيناريوهات محفوظة.</p>";
+        return;
+      }
+      let tableHTML = `<table>
+                          <thead>
+                            <tr style="background-color: var(--primary-color); color: #fff;">
+                              <th style="padding: 10px;">التاريخ</th>
+                              <th style="padding: 10px;">اسم المشروع</th>
+                              <th style="padding: 10px;">النتائج</th>
+                              <th style="padding: 10px;">استعادة</th>
+                            </tr>
+                          </thead>
+                          <tbody>`;
+      savedScenarios.forEach((scn, index) => {
+        tableHTML += `<tr>
+                        <td style="padding: 10px;">${scn.timestamp}</td>
+                        <td style="padding: 10px;">${scn.projectName}</td>
+                        <td style="padding: 10px;">التمويل: ${scn.financing}<br>NPV: ${scn.npv}<br>فترة الاسترداد: ${scn.payback}<br>IRR: ${scn.irr}</td>
+                        <td style="padding: 10px;"><button onclick='restoreHistory(${index})' class="btn-animate" style="padding:5px;">استعادة</button></td>
+                      </tr>`;
+      });
+      tableHTML += `</tbody></table>`;
+      compDiv.innerHTML = `<h3>مقارنة السيناريوهات المحفوظة</h3><div class="table-responsive">${tableHTML}</div>`;
+    }
+    function clearScenarios() {
+      savedScenarios = [];
+      updateScenarioComparison();
+      showToast("تم مسح جميع السيناريوهات.");
+    }
+    // دالة حفظ السجل (تعميم للسجلات: حسابات وتسجيل دخول)
+    function saveRecordToHistory(record) {
+      let history = JSON.parse(localStorage.getItem('calculationHistory')) || [];
+      history.unshift(record);
+      if(history.length > 10) history = history.slice(0,10);
+      localStorage.setItem('calculationHistory', JSON.stringify(history));
+      loadHistory();
+    }
+    // تسجيل دخول المستخدم (تُسجل مرة واحدة لكل جلسة)
+    function saveLoginRecord() {
+      const record = {
+        type: "login",
+        timestamp: new Date().toLocaleString(),
+        projectName: "تسجيل الدخول",
+        results: "تم تسجيل الدخول إلى النظام"
+      };
+      saveRecordToHistory(record);
+    }
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem('calculationHistory')) || [];
+      let html = "";
+      if(history.length === 0) {
+        html = "<p>لا يوجد سجل للعمليات الحسابية.</p>";
+      } else {
+        html += `<table>
+                  <thead>
+                    <tr style="background-color: var(--primary-color); color:#fff;">
+                      <th>التاريخ</th>
+                      <th>اسم العملية</th>
+                      <th>النتائج</th>
+                      <th>استعادة</th>
+                    </tr>
+                  </thead>
+                  <tbody>`;
+        history.forEach((item, index) => {
+          if(item.type === "login") {
+            html += `<tr>
+                      <td style="padding: 8px; border: 1px solid #ccc;">${item.timestamp}</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">تسجيل الدخول</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">${item.results}</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">-</td>
+                    </tr>`;
+          } else if(item.type === "calculation") {
+            html += `<tr>
+                      <td style="padding: 8px; border: 1px solid #ccc;">${item.timestamp}</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">${item.projectName || "غير محدد"}</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">
+                        التمويل: ${item.results.financingNeeded}<br>
+                        NPV: ${item.results.npv}<br>
+                        فترة الاسترداد: ${item.results.payback}<br>
+                        IRR: ${item.results.irr}
+                      </td>
+                      <td style="padding: 8px; border: 1px solid #ccc;"><button onclick='restoreHistory(${index})' class="btn-animate" style="padding:5px;">استعادة</button></td>
+                    </tr>`;
+          }
+        });
+        html += `</tbody></table>`;
+      }
+      document.getElementById('historyList').innerHTML = html;
+    }
+    function restoreHistory(index) {
+      const history = JSON.parse(localStorage.getItem('calculationHistory')) || [];
+      if(history[index] && history[index].type === "calculation") {
+        const data = history[index].inputs;
+        document.getElementById('projectName').value = data.projectName || "";
+        document.getElementById('totalCost').value = data.totalCost || "";
+        document.getElementById('exchangeRate').value = data.exchangeRate || "250";
+        document.getElementById('buildingType').value = data.buildingType || "residential";
+        document.getElementById('buildingUsage').value = data.buildingUsage || "residential";
+        document.getElementById('financingType').value = data.financingType || "bankLoan";
+        document.getElementById('financingPercent').value = data.financingPercent || "30";
+        document.getElementById('annualRevenue').value = data.annualRevenue || "";
+        document.getElementById('annualExpenses').value = data.annualExpenses || "";
+        document.getElementById('interestRate').value = data.interestRate || "8";
+        document.getElementById('projectDuration').value = data.projectDuration || "10";
+        if(document.getElementById('useInflation')) {
+          document.getElementById('useInflation').checked = data.useInflation || false;
+          document.getElementById('inflationRate').value = data.inflationRate || "3";
+        }
+        calculateFeasibility();
+        closeHistoryModal();
+        showToast("تم استعادة البيانات من السجل.");
+      } else {
+        showToast("لا يمكن استعادة سجل تسجيل الدخول.");
+      }
+    }
+    function showHistoryModal() {
+      document.getElementById('historyModal').style.display = "flex";
+    }
+    function closeHistoryModal() {
+      document.getElementById('historyModal').style.display = "none";
+    }
+    function clearHistory() {
+      localStorage.removeItem('calculationHistory');
+      loadHistory();
+      showToast("تم مسح سجل العمليات.");
+    }
+    
+    // قسم تقارير متقدمة: يعرض جدول التدفقات النقدية السنوية
+    function generateAdvancedReport(cashFlows) {
+      let total = cashFlows.reduce((sum, cf) => sum + cf, 0);
+      let average = total / cashFlows.length;
+      let content = '<table style="width:100%; border-collapse: collapse;">';
+      content += '<thead><tr style="background-color: var(--primary-color); color: #fff;">';
+      content += '<th style="padding: 10px; border: 1px solid #ccc;">السنة</th>';
+      content += '<th style="padding: 10px; border: 1px solid #ccc;">التدفق النقدي</th>';
+      content += '</tr></thead><tbody>';
+      for (let i = 0; i < cashFlows.length; i++) {
+        content += `<tr><td style="padding: 10px; border: 1px solid #ccc;">السنة ${i+1}</td><td style="padding: 10px; border: 1px solid #ccc;">${cashFlows[i].toFixed(2)}</td></tr>`;
+      }
+      content += `<tr style="background-color: #f0f0f0;"><td style="padding: 10px; border: 1px solid #ccc;">الإجمالي</td><td style="padding: 10px; border: 1px solid #ccc;">${total.toFixed(2)}</td></tr>`;
+      content += `<tr style="background-color: #f0f0f0;"><td style="padding: 10px; border: 1px solid #ccc;">المتوسط</td><td style="padding: 10px; border: 1px solid #ccc;">${average.toFixed(2)}</td></tr>`;
+      content += '</tbody></table>';
+      document.getElementById('advancedReportContent').innerHTML = content;
+    }
+    
+    // قسم الإحصائيات المالية: يحسب إجمالي التدفقات، المتوسط والعائد على الاستثمار (ROI)
+    function generateFinancialStats(cashFlows, equity) {
+      let totalCashFlow = cashFlows.reduce((sum, cf) => sum + cf, 0);
+      let averageCashFlow = totalCashFlow / cashFlows.length;
+      let roi = (equity !== 0) ? (totalCashFlow / equity * 100).toFixed(2) : "N/A";
+      let statsHtml = `
+       <h2>الإحصائيات المالية</h2>
+       <table style="width:100%; border-collapse: collapse;">
+         <thead>
+           <tr style="background-color: var(--primary-color); color:#fff;">
+             <th style="padding: 10px; border: 1px solid #ccc;">المؤشر</th>
+             <th style="padding: 10px; border: 1px solid #ccc;">القيمة</th>
+           </tr>
+         </thead>
+         <tbody>
+           <tr>
+             <td style="padding: 10px; border: 1px solid #ccc;">إجمالي التدفقات النقدية</td>
+             <td style="padding: 10px; border: 1px solid #ccc;">${totalCashFlow.toFixed(2)}</td>
+           </tr>
+           <tr>
+             <td style="padding: 10px; border: 1px solid #ccc;">متوسط التدفق النقدي السنوي</td>
+             <td style="padding: 10px; border: 1px solid #ccc;">${averageCashFlow.toFixed(2)}</td>
+           </tr>
+           <tr>
+             <td style="padding: 10px; border: 1px solid #ccc;">العائد على الاستثمار (ROI)</td>
+             <td style="padding: 10px; border: 1px solid #ccc;">${roi}%</td>
+           </tr>
+         </tbody>
+       </table>
+      `;
+      document.getElementById('financialStats').innerHTML = statsHtml;
+    }
+    
+    // وظيفة إعادة التعيين
+    function resetCalculator() {
+      document.getElementById('projectName').value = "";
+      document.getElementById('totalCost').value = "";
+      document.getElementById('exchangeRate').value = "250";
+      document.getElementById('buildingType').value = "residential";
+      document.getElementById('buildingUsage').value = "residential";
+      document.getElementById('financingType').value = "bankLoan";
+      document.getElementById('financingPercent').value = "30";
+      document.getElementById('annualRevenue').value = "";
+      document.getElementById('annualExpenses').value = "";
+      document.getElementById('interestRate').value = "8";
+      document.getElementById('projectDuration').value = "10";
+      if(document.getElementById('useInflation')) {
+        document.getElementById('useInflation').checked = false;
+        document.getElementById('inflationRate').value = "3";
+      }
+      document.getElementById('resultSection').innerHTML = "";
+      document.getElementById('advancedReportContent').innerHTML = "";
+      document.getElementById('financialStats').innerHTML = "";
+      if(cashFlowChart) { cashFlowChart.destroy(); cashFlowChart = null; }
+      localStorage.removeItem('feasibilityInputs');
+    }
+    
+    // دوال سجل العمليات (History)
+    function saveRecordToHistory(record) {
+      let history = JSON.parse(localStorage.getItem('calculationHistory')) || [];
+      history.unshift(record);
+      if(history.length > 10) history = history.slice(0,10);
+      localStorage.setItem('calculationHistory', JSON.stringify(history));
+      loadHistory();
+    }
+    // تسجيل دخول المستخدم (تسجل مرة واحدة لكل جلسة)
+    function saveLoginRecord() {
+      const record = {
+        type: "login",
+        timestamp: new Date().toLocaleString(),
+        projectName: "تسجيل الدخول",
+        results: "تم تسجيل الدخول إلى النظام"
+      };
+      saveRecordToHistory(record);
+    }
+    function loadHistory() {
+      const history = JSON.parse(localStorage.getItem('calculationHistory')) || [];
+      let html = "";
+      if(history.length === 0) {
+        html = "<p>لا يوجد سجل للعمليات الحسابية.</p>";
+      } else {
+        html += `<table>
+                  <thead>
+                    <tr style="background-color: var(--primary-color); color:#fff;">
+                      <th>التاريخ</th>
+                      <th>اسم العملية</th>
+                      <th>النتائج</th>
+                      <th>استعادة</th>
+                    </tr>
+                  </thead>
+                  <tbody>`;
+        history.forEach((item, index) => {
+          if(item.type === "login") {
+            html += `<tr>
+                      <td style="padding: 8px; border: 1px solid #ccc;">${item.timestamp}</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">تسجيل الدخول</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">${item.results}</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">-</td>
+                    </tr>`;
+          } else if(item.type === "calculation") {
+            html += `<tr>
+                      <td style="padding: 8px; border: 1px solid #ccc;">${item.timestamp}</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">${item.projectName || "غير محدد"}</td>
+                      <td style="padding: 8px; border: 1px solid #ccc;">
+                        التمويل: ${item.results.financingNeeded}<br>
+                        NPV: ${item.results.npv}<br>
+                        فترة الاسترداد: ${item.results.payback}<br>
+                        IRR: ${item.results.irr}
+                      </td>
+                      <td style="padding: 8px; border: 1px solid #ccc;"><button onclick='restoreHistory(${index})' class="btn-animate" style="padding:5px;">استعادة</button></td>
+                    </tr>`;
+          }
+        });
+        html += `</tbody></table>`;
+      }
+      document.getElementById('historyList').innerHTML = html;
+    }
+    function restoreHistory(index) {
+      const history = JSON.parse(localStorage.getItem('calculationHistory')) || [];
+      if(history[index] && history[index].type === "calculation") {
+        const data = history[index].inputs;
+        document.getElementById('projectName').value = data.projectName || "";
+        document.getElementById('totalCost').value = data.totalCost || "";
+        document.getElementById('exchangeRate').value = data.exchangeRate || "250";
+        document.getElementById('buildingType').value = data.buildingType || "residential";
+        document.getElementById('buildingUsage').value = data.buildingUsage || "residential";
+        document.getElementById('financingType').value = data.financingType || "bankLoan";
+        document.getElementById('financingPercent').value = data.financingPercent || "30";
+        document.getElementById('annualRevenue').value = data.annualRevenue || "";
+        document.getElementById('annualExpenses').value = data.annualExpenses || "";
+        document.getElementById('interestRate').value = data.interestRate || "8";
+        document.getElementById('projectDuration').value = data.projectDuration || "10";
+        if(document.getElementById('useInflation')) {
+          document.getElementById('useInflation').checked = data.useInflation || false;
+          document.getElementById('inflationRate').value = data.inflationRate || "3";
+        }
+        calculateFeasibility();
+        closeHistoryModal();
+        showToast("تم استعادة البيانات من السجل.");
+      } else {
+        showToast("لا يمكن استعادة سجل تسجيل الدخول.");
+      }
+    }
+    function showHistoryModal() {
+      document.getElementById('historyModal').style.display = "flex";
+    }
+    function closeHistoryModal() {
+      document.getElementById('historyModal').style.display = "none";
+    }
+    function clearHistory() {
+      localStorage.removeItem('calculationHistory');
+      loadHistory();
+      showToast("تم مسح سجل العمليات.");
+    }
+    
+    function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF("p", "mm", "a4");
+      doc.setFont("Arial", "normal");
+      doc.text("تقرير حاسبة التمويل والجدوى الاقتصادية", 20, 20);
+      const results = document.getElementById("resultSection").innerText;
+      doc.text(results, 20, 40);
+      doc.text("يرجى مراجعة باقي الأقسام للحصول على التفاصيل الكاملة.", 20, 60);
+      doc.save("تقرير_الجدوى.pdf");
+    }
+    function exportExcel() {
+      let data = [
+        ["التمويل المطلوب", document.getElementById('financingNeeded').innerText],
+        ["NPV", document.getElementById('npvResult').innerText],
+        ["فترة الاسترداد", document.getElementById('paybackPeriod').innerText],
+        ["IRR", document.getElementById('irrResult').innerText]
+      ];
+      let ws = XLSX.utils.aoa_to_sheet(data);
+      let wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "النتائج");
+      XLSX.writeFile(wb, "تقرير_الجدوى.xlsx");
+    }
+    function exportCSV() {
+      let headers = ["المفتاح", "القيمة"];
+      let rows = [
+        ["التمويل المطلوب", document.getElementById('financingNeeded').innerText],
+        ["NPV", document.getElementById('npvResult').innerText],
+        ["فترة الاسترداد", document.getElementById('paybackPeriod').innerText],
+        ["IRR", document.getElementById('irrResult').innerText]
+      ];
+      let csvContent = "data:text/csv;charset=utf-8," + headers.join(",") + "\n" + rows.map(e => e.join(",")).join("\n");
+      var encodedUri = encodeURI(csvContent);
+      var link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", "تقرير_الجدوى.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    function printResult() { window.print(); }
+    function shareResult() {
+      const shareText = document.getElementById('resultSection').innerText;
+      navigator.share({
+        title: 'نتيجة حاسبة التمويل والجدوى',
+        text: shareText,
+        url: window.location.href
+      }).catch(err => console.error('خطأ أثناء المشاركة:', err));
+    }
+    function copyToClipboardResult() {
+      const text = document.getElementById('resultSection').innerText;
+      const tempInput = document.createElement('textarea');
+      tempInput.value = text;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+      showToast("تم نسخ النتيجة إلى الحافظة للمشاركة!");
+    }
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.innerText = message;
+      toast.className = "show";
+      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+    }
+    // تفعيل تبديل اللغة وتبديل الوضع الليلي مع حفظ التفضيل
+    let currentLanguage = "ar";
+    const translations = {
+      introduction: { ar: "المقدمة", en: "Introduction" },
+      dataSection: { ar: "البيانات الأساسية", en: "Basic Data" },
+      resultSection: { ar: "النتائج", en: "Results" },
+      chartSection: { ar: "الرسم البياني", en: "Chart" },
+      sensitivitySection: { ar: "تحليل الحساسية", en: "Sensitivity Analysis" },
+      scenarioSection: { ar: "السيناريوهات", en: "Scenarios" },
+      advancedReport: { ar: "تقارير متقدمة", en: "Advanced Report" },
+      financialStats: { ar: "الإحصائيات المالية", en: "Financial Stats" },
+      recommendations: { ar: "التوصيات", en: "Recommendations" },
+      financialInsights: { ar: "رؤى مالية", en: "Financial Insights" },
+      userGuide: { ar: "دليل المستخدم", en: "User Guide" },
+      internationalStandards: { ar: "المعايير الدولية", en: "International Standards" },
+      importantNotes: { ar: "ملاحظات هامة", en: "Important Notes" },
+      history: { ar: "السجل", en: "History" }
+    };
+    function toggleLanguage() {
+      currentLanguage = (currentLanguage === "ar") ? "en" : "ar";
+      updateLanguage();
+    }
+    function updateLanguage() {
+      document.querySelectorAll("nav a.nav-item").forEach(el => {
+        const key = el.getAttribute("data-key");
+        if(translations[key]) {
+          el.innerHTML = `<i class="${el.getAttribute('data-icon')}"></i> ${translations[key][currentLanguage]}`;
+        }
+      });
+      document.querySelector("h1").innerText = (currentLanguage === "ar") ? "حاسبة التمويل والجدوى الاقتصادية" : "Financial & Feasibility Calculator";
+      document.getElementById("langToggle").innerHTML = `<i class="fas fa-language"></i> ${(currentLanguage === "ar") ? "English" : "عربي"}`;
+    }
+    function toggleDarkMode() {
+      document.body.classList.toggle("light-mode");
+      if(document.body.classList.contains("light-mode")) {
+        localStorage.setItem('mode', 'light');
+        document.getElementById("modeToggle").innerHTML = `<i class="fas fa-moon"></i> الوضع الليلي`;
+      } else {
+        localStorage.setItem('mode', 'dark');
+        document.getElementById("modeToggle").innerHTML = `<i class="fas fa-moon"></i> الوضع الفاتح`;
+      }
+    }
+    document.getElementById("langToggle").addEventListener("click", toggleLanguage);
+    document.getElementById("modeToggle").addEventListener("click", toggleDarkMode);
+  </script>
+  
+  <div id="toast"></div>
+</body>
+</html>
